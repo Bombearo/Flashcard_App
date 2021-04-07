@@ -39,6 +39,15 @@ def validate_password(password):
         errors['invalid'] = f"{','.join(set(symbols))} are not accepted character(s). Please only use alphanumeric characters (letters and numbers) in your username"
     return errors
 
+def validate_set_name(name):
+    errors = []
+    length = len(name)
+    if length < 2 or  length > 30:
+        errors.append("Your flashcard set name must be longer than 2 characters or shorter than 30 characters")
+    if not all(char for char in name if char.isalnum()):
+        errors.append('Your flashcard set name must be alphanumeric')
+    return errors
+    
 def createUserFrame(FrameClass,name,parent,controller,user,errors = []):
     frame = FrameClass(parent = parent, controller = controller, user = user, errors = errors)
     controller.frames[name] = frame

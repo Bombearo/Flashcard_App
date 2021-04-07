@@ -570,6 +570,7 @@ class CreateFlashcard(UserPage):
         #Variable Tracing
         self.phrase_var.trace_add('write',self.update_finish)
         self.definition_var.trace_add('write',self.update_finish)
+        self.controller.set_title.trace_add('write',self.update_finish)
 
         if mode =='UPDATE':
             self.phrase_var.trace_add('write',self.update_frame)
@@ -592,6 +593,7 @@ class CreateFlashcard(UserPage):
         self.back.grid(row=4,column=THIRDS,columnspan=THIRDS,padx=5)
         self.finish.grid(row=4,column=TWO_THIRDS,columnspan=THIRDS,padx=5)
         self.error_label.grid(row=5,columnspan=COLUMN_WIDTH)
+        self.error_label.configure(style='Red.TLabel')
 
         controller.create_set_frames.append(self)
 
@@ -643,17 +645,16 @@ class CreateFlashcard(UserPage):
 
             self.create.config(state=tk.NORMAL)
 
-
-
     def update_finish(self,*args):
         length = self.controller.set_frames
         set_frames = self.controller.create_set_frames
         
+        title = self.controller.set_title.get()
         phrase = self.phrase_var.get()
         definition = self.definition_var.get()
         length.set(len(set_frames))
         
-        if (phrase and definition):
+        if (title and phrase and definition):
             self.create.config(state= tk.NORMAL)
             if length.get() > 3 and all(frame.phrase_var.get() and frame.definition_var.get() for frame in set_frames):
                 for frame in self.controller.create_set_frames:
@@ -662,10 +663,19 @@ class CreateFlashcard(UserPage):
                 for frame in self.controller.create_set_frames:
                     frame.finish.config(state = tk.DISABLED)
             self.check_unique_phrase(phrase)
+            self.validate_title(title)
+            self.validate_phrase_and_definition(phrase,definition)
         else:
             self.create.config(state=tk.DISABLED)
             self.finish.config(state=tk.DISABLED)
     
+    def validate_title(self,title):
+        
+        errors= validate_set_name(title)
+        error = self.errors.get()
+        self.errors.set(f'{error},{" ".join(errors)}')
+
+
     def check_unique_phrase(self,phrase):
         phrases = [card.phrase_widget.get() for card in self.controller.create_set_frames if card.position != self.position]
         if phrase in phrases:
@@ -674,6 +684,19 @@ class CreateFlashcard(UserPage):
         else:
             self.errors.set('')
             self.create.config(state=tk.NORMAL)
+
+    def validate_phrase_and_definition(self,phrase,definition):
+        errors = self.errors.get()
+        if len(phrase) > 20:
+            self.errors.set(f'{errors},{phrase} is too long. Please enter a phrase shorter than 20 characters')
+            self.create.config(state=tk.DISABLED)
+        elif len(definition) > 100:
+            errors = self.errors.get()
+            self.errors.set(f'{errors},{phrase} is too long. Please enter a phrase shorter than 100 characters')
+            self.create.config(state=tk.DISABLED)
+        else:
+            if not errors:
+                self.create.config(state=tk.NORMAL)
 
     def finish(self):
         if self.flash_set:
@@ -697,7 +720,7 @@ class CreateFlashcard(UserPage):
         page_name = View_Flashcards.__name__
         self.controller.destroy_frame(page_name)
         createUserFrame(View_Flashcards,page_name,self.parent,self.controller,self.user)
-
+        self.controller.set_title.set('')
         self.controller.show_frame('View_Flashcards')
 
 
